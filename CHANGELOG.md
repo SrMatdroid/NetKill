@@ -1,6 +1,6 @@
 # NetKill — Historial de cambios
 
-## Versión 1.0.4 (primera versión pública)
+## Versión 1.0.0 (primera versión pública)
 Fecha: 02/11/2026
 
 ### ¿Qué es NetKill?
