@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="banner.jpg" alt="NetKill banner" width="100%">
+</p>
+
 # NetKill · cut Internet at the kernel level
 
 > Author: **srmatdroid** · themes: cyberpunk (phosphor green + subtle amber) and HX (light, HyperOS/iOS-like)
