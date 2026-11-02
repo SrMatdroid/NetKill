@@ -1,5 +1,5 @@
 #!/system/bin/sh
-# NetKill · acción manual (botón "Ejecutar acción" del gestor)
+
 MODDIR="${0%/*}"
 
 echo "NetKill · re-aplicando reglas netfilter..."

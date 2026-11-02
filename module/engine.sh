@@ -1,29 +1,15 @@
 #!/system/bin/sh
-# ============================================================
-#  NetKill · bloqueo de Internet por UID a nivel kernel
-#
-#  netfilter (iptables / ip6tables): se crea la cadena NB_OUT
-#  en OUTPUT y cada app cortada mete una regla
-#      -m owner --uid-owner <uid> -j REJECT
-#  El kernel descarta TODO paquete saliente (TCP, UDP, ICMP,
-#  IPv4 e IPv6) de esas UIDs. Sin apps externas, sin VPN,
-#  instantáneo y sin reinicio.
-#
-#  Escaneo: cubre el usuario 0 y el resto de usuarios/perfiles
-#  de trabajo (cada usuario asigna uids distintos a la misma
-#  app; el motor corta todos).
-# ============================================================
 
 MODDIR="${0%/*}"
 CONF="${NETKILL_CONF:-/data/adb/netkill}"
 LIST="$CONF/apps.list"
 MAP="$CONF/pkgmap.txt"
-DNS_LIST="$CONF/dns.list"     # pkg=ip por línea
-OPTS="$CONF/opts"             # dot=N icmp=N v6=N
-CHAIN=NB_OUT                  # filter OUTPUT (corte por uid)
-DNS_CHAIN=NK_DNS              # nat OUTPUT   (DNS forzado v4)
-DNS_CHAIN6=NK_DNS6            # nat OUTPUT6  (DNS forzado v6)
-OPT_CHAIN=NK_OPT              # filter OUTPUT (opciones privacidad: DoT, ICMP, IPv6)
+DNS_LIST="$CONF/dns.list"     
+OPTS="$CONF/opts"             
+CHAIN=NB_OUT                 
+DNS_CHAIN=NK_DNS      
+DNS_CHAIN6=NK_DNS6       
+OPT_CHAIN=NK_OPT           
 
 log() { echo "$(date '+%y-%m-%d %H:%M:%S') netkill: $*" >> "$CONF/engine.log" 2>/dev/null; }
 
@@ -42,7 +28,6 @@ ensure_conf() {
     [ -f "$LIST" ] || : > "$LIST"
 }
 
-# Escaneo completo de paquetes -> uids, para todos los usuarios.
 refresh_map() {
     ensure_conf
     : > "$MAP.tmp"
@@ -55,7 +40,6 @@ refresh_map() {
     mv "$MAP.tmp" "$MAP"
 }
 
-# Todos los uids de un paquete: escaneo -> /data/data -> re-escaneo
 pkg_uids() {
     local pkg="$1" uids=""
     [ -s "$MAP" ] || refresh_map
@@ -70,7 +54,6 @@ pkg_uids() {
     [ -n "$uids" ] && echo "$uids"
 }
 
-# crea la cadena y el salto desde OUTPUT si no existen (sin vaciar reglas)
 ensure_chain() {
     ipt  -N "$CHAIN" 2>/dev/null
     ipt6 -N "$CHAIN" 2>/dev/null
@@ -78,7 +61,6 @@ ensure_chain() {
     ipt6 -C OUTPUT -j "$CHAIN" 2>/dev/null || ipt6 -I OUTPUT 1 -j "$CHAIN"
 }
 
-# reconstrucción completa: vacía y reconstruye desde cero
 setup_chain() {
     ensure_chain
     ipt  -F "$CHAIN"
@@ -104,11 +86,6 @@ del_rules_uid() {
     ipt6 -D "$CHAIN" -m owner --uid-owner "$1" -j REJECT 2>/dev/null
 }
 
-# ============================================================
-#  PRIVACIDAD · DNS forzado por app + opciones del kernel
-# ============================================================
-
-# ip v4 (cuatro octetos) o v6 (hex + ':')
 sanitize_ip() {
     case "$1" in
         ""|*[!0-9A-Fa-f.:]*) return 1 ;;
@@ -138,16 +115,8 @@ ensure_dns_chain6() {
         ipt6 -t nat -I OUTPUT 1 -j "$DNS_CHAIN6"
 }
 
-# ¿es una ip IPv6? (sanitize_ip ya validó el formato)
 ip_is_v6() { case "$1" in *:*) return 0 ;; *) return 1 ;; esac; }
 
-# reconstruye las reglas DNAT desde dns.list  (pkg=ip)  ·  v4 y v6
-#
-# Nota real-device: Android 9+ resuelve el DNS en netd (libnetd_resolv),
-# así que el match por uid SOLO atrapa las apps con DNS propio; las
-# demás dependen del resolver global (dns global). Aun así, el DNAT
-# por uid cubre la mayoría de apps y bibliotecas que hacen DNS
-# directo (udp/tcp 53).
 dns_rebuild() {
     ensure_dns_chain
     ensure_dns_chain6
@@ -166,8 +135,7 @@ dns_rebuild() {
                     -p udp --dport 53 -j DNAT --to-destination "$ip"
                 ipt6 -t nat -A "$DNS_CHAIN6" -m owner --uid-owner "$uid" \
                     -p tcp --dport 53 -j DNAT --to-destination "$ip"
-                # el DNS asignado es v6: matar las consultas v4:53 de esa
-                # uid obliga al resolver a reintentar por v6 (DNAT real)
+              
                 ipt -t nat -A "$DNS_CHAIN" -m owner --uid-owner "$uid" \
                     -p udp --dport 53 -j DROP 2>/dev/null
                 ipt -t nat -A "$DNS_CHAIN" -m owner --uid-owner "$uid" \
@@ -180,8 +148,7 @@ dns_rebuild() {
                     -p udp --dport 53 -j DNAT --to-destination "$ip"
                 ipt -t nat -A "$DNS_CHAIN" -m owner --uid-owner "$uid" \
                     -p tcp --dport 53 -j DNAT --to-destination "$ip"
-                # el DNS asignado es v4: matar las consultas v6:53 de esa
-                # uid evita que el resolver use el DNS del operador por v6
+            
                 ipt6 -t nat -A "$DNS_CHAIN6" -m owner --uid-owner "$uid" \
                     -p udp --dport 53 -j DROP 2>/dev/null
                 ipt6 -t nat -A "$DNS_CHAIN6" -m owner --uid-owner "$uid" \
@@ -201,7 +168,7 @@ cmd_dns() {
             [ -n "$pkg" ] && [ -n "$ip" ] || { echo "uso: engine.sh dns set <pkg> <ip>"; return 1; }
             if ! sanitize_pkg "$pkg"; then echo "err:paquete_invalido"; return 1; fi
             if ! sanitize_ip "$ip";    then echo "err:ip_invalida:$ip";    return 1; fi
-            # escape dots en el nombre de paquete para que grep no los trate como comodines
+           
 esc_pkg() { printf '%s' "$1" | sed 's/\./\\./g'; }
 local epkg; epkg=$(esc_pkg "$pkg")
 
@@ -209,8 +176,7 @@ grep -v "^${epkg}=" "$DNS_LIST" 2>/dev/null > "$DNS_LIST.tmp"
             [ -s "$DNS_LIST.tmp" ] || : > "$DNS_LIST.tmp"
             echo "$pkg=$ip" >> "$DNS_LIST.tmp"
             mv "$DNS_LIST.tmp" "$DNS_LIST"
-            # si el paquete aún no está en el mapa, escanear antes de
-            # construir (sin uid la regla no se crea y "no funciona")
+           
             grep -qF "package:$pkg " "$MAP" 2>/dev/null || refresh_map
             dns_rebuild
             echo "ok:dns:$pkg=$ip"
@@ -264,7 +230,6 @@ grep -v "^${epkg}=" "$DNS_LIST" 2>/dev/null > "$DNS_LIST.tmp"
     esac
 }
 
-# cadena de opciones en OUTPUT (v4+v6), después de NB_OUT
 ensure_opt_chain() {
     ipt  -N "$OPT_CHAIN" 2>/dev/null
     ipt6 -N "$OPT_CHAIN" 2>/dev/null
@@ -276,7 +241,6 @@ ensure_opt_chain() {
     fi
 }
 
-# reconstruye NK_OPT desde $OPTS (dot=1 icmp=0 v6=0 … una clave por línea)
 opt_value() {
     grep "^$1=" "$OPTS" 2>/dev/null | sed -n 's/^[^=]*=\([01]\)$/\1/p' | head -n 1
 }
@@ -307,8 +271,6 @@ opts_rebuild() {
     log "opts: dot=$(opt_get dot) icmp=$(opt_get icmp) v6=$(opt_get v6)"
 }
 
-# engine.sh opts                    → imprime el estado actual
-# engine.sh opts dot=1 icmp=0 v6=0  → ajusta y reconstruye
 cmd_opts() {
     ensure_conf
     if [ $# -eq 0 ]; then
@@ -346,7 +308,7 @@ cmd_apply() {
     setup_chain
     refresh_map
     if [ "$(master_state)" = "1" ]; then
-        # modo maestro: cortar TODAS las uids de apps y servicios
+     
         ipt  -A "$CHAIN" -m owner --uid-owner 1000:65535 -j REJECT
         ipt6 -A "$CHAIN" -m owner --uid-owner 1000:65535 -j REJECT
     else
@@ -381,7 +343,7 @@ cmd_status() {
     fi
     pkgs=$(grep -c . "$LIST" 2>/dev/null)
     pkgs=${pkgs:-0}
-    # reglas totales (v4) + conteo v6 separado
+    
     echo "master=$m chain=$chain rules=$rules4 pkgs=$pkgs rules6=$rules6"
 }
 
@@ -424,8 +386,7 @@ cmd_allow() {
     if [ "$(master_state)" != "1" ]; then
         uids=$(pkg_uids "$pkg")
         for uid in $uids; do
-            # si otro paquete de la lista comparte este uid, la regla
-            # del kernel debe seguir viva (el match es por uid)
+       
             keep=0
             while IFS= read -r other; do
                 [ -n "$other" ] || continue
@@ -443,7 +404,6 @@ cmd_allow() {
     echo "ok:$pkg"
 }
 
-# estado real de las reglas de un paquete (para la WebUI)
 cmd_check() {
     ensure_conf
     local pkg="$1" uids uid r4 r6
@@ -459,7 +419,6 @@ cmd_check() {
     done
 }
 
-# diagnóstico completo del sistema y del filtro
 cmd_diag() {
     ensure_conf
     local owner="fail" iptv dev model rel sdk kern arch mgr
@@ -518,7 +477,6 @@ cmd_list() {
     cat "$LIST" 2>/dev/null
 }
 
-# sonda experimental: ¿soporta el kernel owner pid/cmd?
 cmd_expprobe() {
     ensure_conf
     local r="unsupported"
@@ -527,7 +485,7 @@ cmd_expprobe() {
         r="pid-owner"
     fi
     ipt -F NK_EXPPROBE 2>/dev/null; ipt -X NK_EXPPROBE 2>/dev/null
-    # prueba cmd-owner (no disponible en la mayoría de Android)
+  
     ipt -N NK_EXPPROBE 2>/dev/null
     if ipt -A NK_EXPPROBE -m owner --cmd-owner sh -j RETURN 2>/dev/null; then
         r="$r+cmd-owner"

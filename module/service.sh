@@ -1,5 +1,4 @@
 #!/system/bin/sh
-# NetKill · re-aplica el filtro al arrancar el sistema
 MODDIR="${0%/*}"
 CONF="${NETKILL_CONF:-/data/adb/netkill}"
 

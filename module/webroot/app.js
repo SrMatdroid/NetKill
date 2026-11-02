@@ -1,17 +1,10 @@
-/* ============================================================
- * NetKill · WebUI
- * corta Internet por UID a nivel kernel (netfilter OUTPUT)
- * compatible: KernelSU / KernelSU Next / APatch / Magisk+WebUIX
- * ============================================================ */
+/* lol */
 'use strict';
 
 var MODID  = 'netkill';
 var ENGINE = '/data/adb/modules/' + MODID + '/engine.sh';
 var CONF   = '/data/adb/netkill';
 
-/* ------------------------------------------------------------------
- * nombres conocidos (fallback: última parte del paquete)
- * ------------------------------------------------------------------ */
 var LABELS = {
   'android':'Sistema Android',
   'com.android.vending':'Play Store',
@@ -175,12 +168,11 @@ function hueOf(s){
   return h % 360;
 }
 
-/* tonos de letra para avatares, dentro de la paleta del tema */
 var AV_TONES = [
-  'hsl(150,32%,62%)',   /* verde fósforo suave */
-  'hsl(38,40%,58%)',    /* ámbar suave */
-  'hsl(160,22%,55%)',   /* verde grisáceo */
-  'hsl(8,38%,60%)'      /* rojo apagado */
+  'hsl(150,32%,62%)',  
+  'hsl(38,40%,58%)',    
+  'hsl(160,22%,55%)',  
+  'hsl(8,38%,60%)'      
 ];
 function avatarTone(pkg){
   if (currentTheme() === 'hx'){
@@ -189,9 +181,6 @@ function avatarTone(pkg){
   return AV_TONES[hueOf(pkg) % AV_TONES.length];
 }
 
-/* ------------------------------------------------------------------
- * internacionalización: español / inglés (detección automática del sistema)
- * ------------------------------------------------------------------ */
 var I18N = {
   es: {
     'lang.toggle': 'Idioma',
@@ -589,7 +578,7 @@ function applyTheme(t){
   try { localStorage.setItem('nk_theme', t); } catch (e) {}
   var meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', t === 'hx' ? '#f2f3f6' : '#050706');
-  render(); /* recolorea avatares */
+  render();
 }
 
 function toggleTheme(){
@@ -604,9 +593,6 @@ function restoreTheme(){
   if (meta) meta.setAttribute('content', t === 'hx' ? '#f2f3f6' : '#050706');
 }
 
-/* ------------------------------------------------------------------
- * bridge root (KernelSU / APatch / Magisk-WebUIX)
- * ------------------------------------------------------------------ */
 var bridge = null, demo = false, seq = 0;
 
 function findBridge(){
@@ -646,11 +632,14 @@ function shell(cmd){
     }
     try {
       var r = api.exec(cmd, {}, name);
-      useThenable(r); /* si es callback-style, esperamos el callback */
+      useThenable(r); 
+      
     } catch (e) {
       try {
         var r2 = api.exec(cmd, name);
-        if (!useThenable(r2) && !settled){ /* esperamos callback */ }
+        if (!useThenable(r2) && !settled){ 
+        }
+   
       } catch (e2) {
         settle(reject, e2 instanceof Error ? e2 : new Error(String(e2)));
       }
@@ -662,9 +651,7 @@ function runEngine(args){
   return shell('sh "' + ENGINE + '" ' + args);
 }
 
-/* ------------------------------------------------------------------
- * estado
- * ------------------------------------------------------------------ */
+
 var apps = [];
 var blocked = new Set();
 var curFilter = 'all';
@@ -724,9 +711,6 @@ function updateMasterBtn(){
   $id('btnMaster').textContent = master ? t('btn.master.on') : t('btn.master');
 }
 
-/* ------------------------------------------------------------------
- * carga de datos
- * ------------------------------------------------------------------ */
 function pmList(args){
   return shell('pm list packages ' + args + ' --show-versioncode')
     .catch(function(){ return shell('pm list packages ' + args); });
@@ -739,8 +723,7 @@ function load(){
 
   if (demo){ loadDemo(); finish(); return; }
 
-  $id('demoBar').classList.add('hidden'); /* por si se entró en demo y luego aparece el bridge */
-
+  $id('demoBar').classList.add('hidden'); 
   Promise.resolve()
     .then(function(){ return pmList('-U'); })
     .then(function(allT){
@@ -761,8 +744,6 @@ function load(){
       var userSet = {};
       parsePkgs(r.userT).forEach(function(a){ userSet[a.pkg] = 1; });
 
-      /* escaneo completo: agrupar por paquete conservando TODOS los uids
-         (usuario principal + perfiles de trabajo) */
       var byPkg = {}, order = [];
       parsePkgs(r.allT).forEach(function(a){
         var e = byPkg[a.pkg];
@@ -775,7 +756,6 @@ function load(){
         if (!e.ver && a.ver) e.ver = a.ver;
       });
 
-      /* uid compartido: dos o más paquetes con el mismo appId */
       var appCount = {};
       order.forEach(function(e){
         var id = e.uids[0] % 100000;
@@ -802,9 +782,6 @@ function refreshStatus(){
   runEngine('status').then(parseStatus, function(){});
 }
 
-/* ------------------------------------------------------------------
- * render
- * ------------------------------------------------------------------ */
 function visibleApps(){
   var qn = q.trim().toLowerCase();
   return apps.filter(function(a){
@@ -892,7 +869,6 @@ function makeRow(a){
   return row;
 }
 
-/* util: ¿el elemento o algún ancestro (hasta root) coincide con sel? */
 function inSel(el, sel, root){
   while (el && el !== root){
     if (el.matches && el.matches(sel)) return true;
@@ -901,9 +877,6 @@ function inSel(el, sel, root){
   return false;
 }
 
-/* ------------------------------------------------------------------
- * panel de detalles expandible de cada fila
- * ------------------------------------------------------------------ */
 function kvRow(parent, k, v, cls){
   var r = document.createElement('div');
   r.className = 'kv';
@@ -921,9 +894,6 @@ function kvRow(parent, k, v, cls){
 function buildDetails(a){
   var d = document.createElement('div');
   d.className = 'details';
-  /* panel vacío de fábrica: el contenido —y la consulta al kernel— se
-     hacen SOLO al abrir la fila (fillDetails), nunca al renderizar la
-     lista: 400 apps × check = 400 spawns de su y la UI se congela */
   return d;
 }
 
@@ -977,7 +947,7 @@ function toggleExpand(a, row){
   row.classList.toggle('open', open);
   if (open){
     var d = row.querySelector('.details');
-    if (d) fillDetails(a, d); /* relee: estado fresco */
+    if (d) fillDetails(a, d); 
   }
 }
 
@@ -1009,9 +979,6 @@ function render(){
   $id('cCut').textContent  = blocked.size;
 }
 
-/* ------------------------------------------------------------------
- * acciones
- * ------------------------------------------------------------------ */
 function toggleApp(a, row, sw){
   var want = !blocked.has(a.pkg);
 
@@ -1069,11 +1036,7 @@ function refreshCountsPillDemo(){
   else { pill.classList.add('off'); txt.textContent = t('state.off'); }
 }
 
-/* ------------------------------------------------------------------
- * modal: grupo de apps que comparten uid
- * ------------------------------------------------------------------ */
-var uidCtx = null; /* { appId, apps[], sws{} } del grupo abierto */
-
+var uidCtx = null; 
 function uidGroup(a){
   var id = a.uids[0] % 100000;
   return apps.filter(function(x){ return (x.uids[0] % 100000) === id; });
@@ -1142,7 +1105,6 @@ function renderUidModal(){
   setUidBanner(demo ? tf('uid.banner.demo.rule', { id: uidCtx.appId }) : t('detail.rules.loading'), '');
 }
 
-/* ¿alguna regla viva para el uid, según la salida de check? */
 function uidCutFromCheck(out){
   var cut = false;
   (out || '').split(/\r?\n/).forEach(function(l){
@@ -1169,8 +1131,7 @@ function setUidBanner(text, cls){
 function refreshUidStates(){
   if (!uidCtx) return;
   if (demo){
-    /* la regla es por uid: si un miembro está en la lista,
-       TODO el grupo está cortado (igual que en el kernel) */
+  
     var anyDemo = uidCtx.apps.some(function(a){ return blocked.has(a.pkg); });
     uidCtx.apps.forEach(function(a){ setUrowState(a, anyDemo); });
     setUidBanner(anyDemo
@@ -1178,8 +1139,7 @@ function refreshUidStates(){
       : t('uid.banner.demo.none'), anyDemo ? 'on' : 'off');
     return;
   }
-  /* consultas en SERIE (no en paralelo): no disparar una ráfaga de
-     procesos su que ahogue el puente del WebView */
+
   var res = [];
   var chainJobs = Promise.resolve();
   uidCtx.apps.forEach(function(a){
@@ -1210,8 +1170,7 @@ function refreshUidStates(){
 
 function uidToggle(a, sw){
   if (!uidCtx || sw.classList.contains('busy')) return;
-  var want = !sw.classList.contains('on'); /* true → cortar */
-
+  var want = !sw.classList.contains('on'); 
   if (demo){
     if (want) blocked.add(a.pkg); else blocked.delete(a.pkg);
     sw.classList.add('busy');
@@ -1243,7 +1202,7 @@ function uidToggle(a, sw){
           ? t('toast.master.confirm')
           : tf('toast.cut.uid', { id: (a.uids[0] % 100000) }), 'err');
       } else {
-        /* el motor puede conservar la regla si otro miembro sigue en la lista */
+  
         return runEngine('check "' + a.pkg + '"').then(function(out){
           if (uidCutFromCheck(out)){
             setUrowState(a, true);
@@ -1272,9 +1231,6 @@ function closeUidModal(){
   uidCtx = null;
 }
 
-/* ------------------------------------------------------------------
- * modal: diagnóstico del sistema
- * ------------------------------------------------------------------ */
 var DEMO_DIAG = [
   'device=garnet model=Redmi_Note_13_Pro_5G android=15 sdk=35 kernel=5.10.209-android13 ' +
   'arch=aarch64 mgr=KernelSU iptables=v1.8.10 owner=ok chain4=1 chain6=1 rules4=3 rules6=3 master=0 pkgs=3 pkgmap=3',
@@ -1410,9 +1366,7 @@ function regen(){
   }).then(function(){ btn.disabled = false; });
 }
 
-/* ------------------------------------------------------------------
- * modo demo (sin bridge root: vista previa en navegador)
- * ------------------------------------------------------------------ */
+
 var DEMO = [
   { pkg:'com.whatsapp',                    uids:[10234],        cat:'user',   shared:false, ver:230483061 },
   { pkg:'com.instagram.android',           uids:[10257],        cat:'user',   shared:false, ver:371020282 },
@@ -1447,9 +1401,6 @@ function loadDemo(){
   render();
 }
 
-/* ------------------------------------------------------------------
- * ajustes avanzados · DNS / privacidad (engine.sh)
- * ------------------------------------------------------------------ */
 function isIPv46(s){
   s = (s||'').trim();
   if (/^[0-9]{1,3}(\.[0-9]{1,3}){3}$/.test(s)) return true;
@@ -1467,7 +1418,6 @@ function advFillDatalist(){
   dl.innerHTML = opts;
 }
 
-/* --- DNS global (Private DNS / DoT) --- */
 function renderDnsGlobal(host){
   host = (host||'').trim();
   var st = $id('dnsGlobalState');
@@ -1491,7 +1441,6 @@ function refreshDnsGlobal(){ runEngine('dns getglobal').then(function(s){
   renderDnsGlobal((s||'').trim());
 }, function(){}); }
 
-/* --- DNS por app --- */
 function dnsResolveIp(){
   var sel = $id('dnsPreset'), v = sel.value;
   if (v==='custom'){ return $id('dnsCustom').value.trim(); }
@@ -1536,7 +1485,6 @@ function renderDnsList(text){
 }
 function refreshDnsList(){ runEngine('dns list').then(renderDnsList, function(){ renderDnsList(''); }); }
 
-/* --- privacidad kernel (opts) --- */
 function parseOpts(s){
   var o = { dot:'0', icmp:'0', v6:'0' };
   var m = /dot=(\d)/.exec(s||'');   if (m) o.dot  = m[1];
@@ -1560,7 +1508,6 @@ function advOpt(key, on){
   }, function(e){ toast(tf('toast.error', { e: e.message || e }), 'err'); refreshOpts(); });
 }
 
-/* --- modal --- */
 function expProbe(){
   var st = $id('expState');
   if (!st) return;
@@ -1589,9 +1536,6 @@ function openAdv(){
 }
 function closeAdv(){ advOpen=false; $id('advModal').classList.add('hidden'); }
 
-/* ------------------------------------------------------------------
- * arranque
- * ------------------------------------------------------------------ */
 function init(){
   bridge = findBridge();
   demo = !bridge;
@@ -1635,7 +1579,6 @@ function init(){
     if (ev.target === this) closeDiagModal();
   });
 
-  /* ajustes avanzados (DNS / privacidad) */
   $id('btnAdv').addEventListener('click', openAdv);
   $id('advClose').addEventListener('click', closeAdv);
   $id('advRefresh').addEventListener('click', advRefreshAll);
