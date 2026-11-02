@@ -7,3 +7,6 @@ test/
 *.png
 Screenshot_*
 !banner.jpg
+
+!killm.jpg
+!module/killm.jpg
