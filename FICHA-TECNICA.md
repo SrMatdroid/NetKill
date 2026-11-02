@@ -3,7 +3,7 @@
 ## Identificación
 - Nombre: NetKill
 - ID del módulo: netkill
-- Versión: 1.0.4 (versionCode 104)
+- Versión: 1.0.0 (versionCode 100)
 - Autor: srmatdroid
 - Tipo: Módulo Magisk / KernelSU / APatch
 - Licencia: (no especificada en el módulo)
