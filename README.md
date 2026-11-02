@@ -57,7 +57,7 @@ netkill/
 
 ## Installation
 
-1. Build the zip: `./build.sh` → `netkill-1.0.5.zip`.
+1. Build the zip: `./build.sh` → `netkill-1.0.0.zip`.
 2. Flash from your manager (KernelSU → Modules → Install).
 3. Open the **WebUI** on the module card and pick apps.
 
