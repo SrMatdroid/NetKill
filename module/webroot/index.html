@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="cb">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07080a">
+<title>NetKill</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- capa decorativa: marco, scanlines, marcas de esquina -->
+<div class="fx" aria-hidden="true">
+  <i class="fx-frame"></i>
+  <i class="fx-tick fx-tick-a"></i>
+  <i class="fx-tick fx-tick-b"></i>
+  <i class="fx-scan"></i>
+</div>
+
+<header class="hdr">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 24 24" aria-hidden="true">
+      <g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square">
+        <path d="M8 3v5M16 3v5"/>
+        <path d="M6 8h12v3.5a6 6 0 0 1-12 0z"/>
+        <path d="M12 17.5V21"/>
+      </g>
+      <line x1="3" y1="2.5" x2="21" y2="21.5" stroke="currentColor" stroke-width="1.7"/>
+    </svg>
+    <div class="brand-tab">
+      <h1 class="gtxt">NETKILL</h1>
+      <p class="sub">firewall netfilter · uid-level · srmatdroid</p>
+    </div>
+  </div>
+  <div class="hdr-side">
+    <button id="btnLang" type="button" class="icon-btn" title="language" aria-label="language" data-i18n-title="lang.toggle" data-i18n-aria="lang.toggle">ES</button>
+    <button id="btnTheme" type="button" class="icon-btn" title="cambiar interfaz" aria-label="cambiar interfaz" data-i18n-title="theme.toggle" data-i18n-aria="theme.toggle">
+      <svg class="i-cb" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square">
+        <rect x="7" y="7" width="10" height="10"/>
+        <path d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4"/>
+      </svg>
+      <svg class="i-hx" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="12" cy="12" r="8"/>
+        <path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/>
+      </svg>
+    </button>
+    <button id="btnAdv" type="button" class="icon-btn" title="ajustes avanzados (DNS / privacidad)" aria-label="ajustes avanzados" data-i18n-title="adv.open" data-i18n-aria="adv.open">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square">
+        <circle cx="7" cy="7" r="3"/><circle cx="17" cy="17" r="3"/>
+        <path d="M3 7h16M13 7l4 10M11 17H3"/>
+      </svg>
+    </button>
+    <button id="btnDiag" type="button" class="icon-btn" title="diagnóstico del sistema" aria-label="diagnóstico" data-i18n-title="diag.open" data-i18n-aria="diag.open">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square">
+        <path d="M3 12h4l2-5 4 10 2-5h6"/>
+      </svg>
+    </button>
+    <button id="btnRefresh" type="button" class="icon-btn" title="reconsultar sistema" aria-label="reconsultar" data-i18n-title="refresh" data-i18n-aria="refresh">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square">
+        <path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/>
+        <path d="M21 3v5h-5"/>
+      </svg>
+    </button>
+    <div id="statePill" class="pill off">
+      <span class="dot"></span><span id="stateTxt" data-i18n="state.loading">CONSULTANDO…</span>
+    </div>
+  </div>
+</header>
+
+<div id="demoBar" class="demo-bar hidden" data-i18n="demo.bar">
+  modo demostración — sin bridge root · abre la WebUI desde el gestor
+</div>
+
+<main>
+  <div class="toolbar">
+    <div class="scan-wrap">
+      <input id="q" type="search" placeholder="buscar paquete o nombre…" autocomplete="off" spellcheck="false" data-i18n-placeholder="search.placeholder">
+      <span class="scan-tag" aria-hidden="true">▮▮</span>
+    </div>
+    <div class="chips">
+      <button class="chip active" data-f="all"><span class="cin"><span data-i18n="filter.all">TODAS</span> <b id="cAll">·</b></span></button>
+      <button class="chip" data-f="user"><span class="cin"><span data-i18n="filter.user">USUARIO</span> <b id="cUser">·</b></span></button>
+      <button class="chip" data-f="sys"><span class="cin"><span data-i18n="filter.sys">SISTEMA</span> <b id="cSys">·</b></span></button>
+      <button class="chip danger" data-f="cut"><span class="cin"><span data-i18n="filter.cut">CORTADAS</span> <b id="cCut">·</b></span></button>
+    </div>
+  </div>
+
+  <section id="list" class="list" aria-live="polite">
+    <div class="sk"></div><div class="sk"></div><div class="sk"></div>
+    <div class="sk"></div><div class="sk"></div><div class="sk"></div>
+  </section>
+
+  <div id="empty" class="empty hidden">
+    <span class="empty-glyph">∅</span>
+    <p data-i18n="empty">sin resultados</p>
+  </div>
+
+  <p class="foot" id="foot">
+    <span class="bar-strip" aria-hidden="true"></span>
+    <span class="gtxt" data-i18n="foot">netfilter OUTPUT v4+v6 · REJECT por uid · cadena NB_OUT · sin VPN · sin apps extra</span>
+  </p>
+</main>
+
+<footer class="bar">
+  <button id="btnApply" class="btn ghost" data-i18n="btn.regen">REGENERAR</button>
+  <button id="btnMaster" class="btn kill" data-i18n="btn.master">MAESTRO</button>
+</footer>
+
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <i class="ck ck-a" aria-hidden="true"></i>
+    <i class="ck ck-b" aria-hidden="true"></i>
+    <h3 id="modalTitle">BLOQUEO GLOBAL</h3>
+    <p id="modalBody">…</p>
+    <div class="modal-actions">
+      <button id="modalCancel" class="btn ghost" data-i18n="modal.cancel">CANCELAR</button>
+      <button id="modalOk" class="btn kill">CONFIRMAR</button>
+    </div>
+  </div>
+</div>
+
+<div id="uidModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <i class="ck ck-a" aria-hidden="true"></i>
+    <i class="ck ck-b" aria-hidden="true"></i>
+    <h3 id="uidTitle" data-i18n="uid.title">UID COMPARTIDO</h3>
+    <p id="uidNote">…</p>
+    <div id="uidList" class="uid-list"></div>
+    <div id="uidBanner" class="ukbanner">…</div>
+    <div class="modal-actions">
+      <button id="uidClose" class="btn ghost" data-i18n="uid.close">CERRAR</button>
+    </div>
+  </div>
+</div>
+
+<div id="diagModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <i class="ck ck-a" aria-hidden="true"></i>
+    <i class="ck ck-b" aria-hidden="true"></i>
+    <h3 data-i18n="diag.title">DIAGNÓSTICO</h3>
+    <div id="diagBody" class="diag"></div>
+    <div class="modal-actions">
+      <button id="diagClose" class="btn ghost" data-i18n="diag.close">CERRAR</button>
+    </div>
+  </div>
+</div>
+
+<div id="advModal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-box adv-box">
+    <i class="ck ck-a" aria-hidden="true"></i>
+    <i class="ck ck-b" aria-hidden="true"></i>
+    <h3 data-i18n="adv.title">AJUSTES AVANZADOS</h3>
+    <div id="advBody" class="adv">
+
+      <!-- DNS global -->
+      <section class="adv-sec">
+        <h4 data-i18n="adv.sec.dnsGlobal">DNS GLOBAL · PRIVATE DNS (DoT)</h4>
+        <p class="adv-note" data-i18n-html="adv.note.dnsGlobal">Cifra el DNS de <b>todo el equipo</b> (TLS del sistema). Si el
+          resolver elegido falla puedes quedarte sin Internet hasta apagarlo.</p>
+        <div id="dnsGlobalState" class="adv-status" data-i18n="diag.loading">consultando…</div>
+        <div class="chip-row" id="dotPresets">
+          <button class="chip" data-dot="off">OFF</button>
+          <button class="chip" data-dot="one.one.one.one">Cloudflare</button>
+          <button class="chip" data-dot="dns.google">Google</button>
+          <button class="chip" data-dot="dns.quad9.net">Quad9</button>
+          <button class="chip" data-dot="dns.adguard-dns.com">AdGuard</button>
+        </div>
+        <div class="adv-inline">
+          <input id="dotCustom" placeholder="host DoT personalizado (ej. security.cloudflare-dns.com)"
+            autocomplete="off" spellcheck="false">
+          <button id="dotSet" class="btn ghost small">APLICAR</button>
+        </div>
+      </section>
+
+      <!-- DNS por app -->
+      <section class="adv-sec">
+        <h4 data-i18n="adv.sec.dnsPerApp">DNS POR APP · DNAT KERNEL</h4>
+        <p class="adv-note" data-i18n-html="adv.note.dnsPerApp">Cada app puede llevar su propio resolver: redireccionado DNAT en
+          el puerto 53 por UID (cadena NK_DNS). Otra app o el sistema mantienen otro DNS.
+          Las apps con DoT/DoH propio lo ignoran: usa «BLOQUEAR DoT» en PRIVACIDAD.
+          El corte del firewall tiene prioridad.</p>
+        <div id="dnsPerAppState" class="adv-status">consultando…</div>
+        <div class="adv-inline">
+          <input id="dnsPkg" list="pkgList" placeholder="paquete, ej. com.whatsapp"
+            autocomplete="off" spellcheck="false">
+          <datalist id="pkgList"></datalist>
+          <select id="dnsPreset">
+            <option value="1.1.1.1">Cloudflare</option>
+            <option value="8.8.8.8">Google</option>
+            <option value="9.9.9.9">Quad9</option>
+            <option value="94.140.14.14">AdGuard</option>
+            <option value="custom">Personalizado…</option>
+          </select>
+          <input id="dnsCustom" type="text" inputmode="numeric" placeholder="IP v4/v6" hidden>
+          <button id="dnsAdd" class="btn ghost small">ASIGNAR</button>
+        </div>
+        <div id="dnsList" class="dns-list"></div>
+        <div class="adv-inline">
+          <button id="dnsClearAll" class="btn ghost small">QUITAR TODOS</button>
+        </div>
+      </section>
+
+      <!-- Privacidad en el kernel -->
+      <section class="adv-sec">
+        <h4 data-i18n="adv.sec.priv">PRIVACIDAD EN EL KERNEL · NK_OPT</h4>
+        <p class="adv-note" data-i18n-html="adv.note.priv">Reglas netfilter en la cadena <code>NK_OPT</code> de OUTPUT (v4+v6),
+          reconstruidas en cada BOOT y en REGENERAR. Son bloqueos duros del kernel.</p>
+        <div id="optState" class="adv-status" data-i18n="adv.opt.state">consultando…</div>
+        <label class="chk"><input type="checkbox" id="optDot">
+          <span data-i18n-html="adv.opt.dot"><b>BLOQUEAR DoT (tcp/853)</b> — cierra el DNS cifrado de apps que se saltan tu DNS forzado o el Private DNS.</span></label>
+        <label class="chk"><input type="checkbox" id="optIcmp">
+          <span data-i18n-html="adv.opt.icmp"><b>BLOQUEAR PING SALIENTE</b> — rechaza ICMP echo-request emitido (los demás no recibirán ping de este equipo).</span></label>
+        <label class="chk"><input type="checkbox" id="optV6">
+          <span data-i18n-html="adv.opt.v6"><b>BLOQUEAR IPv6</b> — rechaza TODO el tráfico IPv6 de salida (para redes IPv4 sin fugas).</span></label>
+      </section>
+
+      <!-- EXPERIMENTAL · aislamiento por app (UID compartido) -->
+      <section class="adv-sec" style="border-color:rgba(224,52,42,.4)">
+        <h4 data-i18n="adv.exp.title">EXPERIMENTAL · AISLAMIENTO POR APP (UID COMPARTIDO)</h4>
+        <p class="adv-warn" data-i18n-html="adv.exp.warn">⚠ Inestable y no portable. Intenta distinguir apps que comparten UID usando pid/cmd-owner (rotos en SMP y ausentes en la mayoría de Android). No afecta a las opciones estables. Puede no funcionar o romper el filtrado.</p>
+        <div id="expState" class="adv-status" data-i18n="adv.exp.untested">sin probar</div>
+        <div class="adv-inline">
+          <button id="expProbe" class="btn ghost small" data-i18n="adv.exp.probe">PROBAR SOPORTE</button>
+        </div>
+      </section>
+
+    </div>
+    <div class="modal-actions">
+      <button id="advRefresh" class="btn ghost" data-i18n="adv.refresh">REFRESCAR</button>
+      <button id="advClose" class="btn" data-i18n="adv.close">CERRAR</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

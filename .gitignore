@@ -1,0 +1,8 @@
+# test harness / local artifacts
+test/
+*.zip
+*.avif
+*.jpg
+*.jpeg
+*.png
+Screenshot_*
