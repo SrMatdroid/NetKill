@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Empaqueta el módulo NetKill en un zip listo para flashear.
-# La raíz del zip debe contener module.prop directamente.
+
 set -euo pipefail
 
 cd "$(dirname "$0")"
