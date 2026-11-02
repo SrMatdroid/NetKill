@@ -1,6 +1,6 @@
 id=netkill
 name=NetKill
-version=1.0.5
-versionCode=105
+version=1.0.0
+versionCode=100
 author=srmatdroid
 description=Corta el Internet a nivel kernel (netfilter OUTPUT IPv4/IPv6 por UID) de las apps que elijas, de sistema o de usuario. WebUI incluida. Sin reinicios.

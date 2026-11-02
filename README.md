@@ -183,7 +183,7 @@ Pressing the **SETTINGS** button (gear icon) opens a modal with three sections:
 
 ## Build
 
-Run `./build.sh` in the repository root to generate `netkill-1.0.5.zip`, ready to flash.
+Run `./build.sh` in the repository root to generate `netkill-1.0.0.zip`, ready to flash.
 
 ## License
 
